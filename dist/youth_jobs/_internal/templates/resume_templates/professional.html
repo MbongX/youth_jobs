@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <!-- Header Section -->
+                    <div class="text-center mb-5">
+                        <h1 class="display-4">{{ current_user.username }}</h1>
+                        <p class="lead">{{ current_user.email }}</p>
+                    </div>
+
+                    <!-- Professional Summary -->
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Professional Summary</h2>
+                        <p class="lead">{{ resume.summary if resume.summary else 'Add a professional summary' }}</p>
+                    </section>
+
+                    <!-- Experience Section -->
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Professional Experience</h2>
+                        {% if resume and resume.experience %}
+                            {% for exp in resume.experience|json_loads %}
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between">
+                                    <h3 class="h5">{{ exp.position }}</h3>
+                                    <span class="text-muted">{{ exp.start_date }} - {{ exp.end_date }}</span>
+                                </div>
+                                <h4 class="h6 text-primary">{{ exp.company }}</h4>
+                                <p>{{ exp.description }}</p>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </section>
+
+                    <!-- Education Section -->
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Education</h2>
+                        {% if resume and resume.education %}
+                            {% for edu in resume.education|json_loads %}
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between">
+                                    <h3 class="h5">{{ edu.degree }}</h3>
+                                    <span class="text-muted">{{ edu.start_date }} - {{ edu.end_date }}</span>
+                                </div>
+                                <h4 class="h6 text-primary">{{ edu.institution }}</h4>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </section>
+
+                    <!-- Skills Section -->
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Skills</h2>
+                        {% if resume and resume.skills %}
+                        <div class="row">
+                            {% for skill in resume.skills.split(',') %}
+                            <div class="col-md-4 mb-2">
+                                <span class="badge bg-primary p-2">{{ skill.strip() }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <!-- Projects Section -->
+                    {% if resume and resume.projects %}
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Projects</h2>
+                        {% for project in resume.projects|json_loads %}
+                        <div class="mb-4">
+                            <h3 class="h5">{{ project.name }}</h3>
+                            <p>{{ project.description }}</p>
+                            {% if project.url %}
+                            <a href="{{ project.url }}" target="_blank" class="btn btn-outline-primary btn-sm">View Project</a>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </section>
+                    {% endif %}
+
+                    <!-- Certifications Section -->
+                    {% if resume and resume.certifications %}
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Certifications</h2>
+                        {% for cert in resume.certifications|json_loads %}
+                        <div class="mb-3">
+                            <h3 class="h5">{{ cert.name }}</h3>
+                            <p class="text-muted">Issued by {{ cert.issuer }} - {{ cert.date }}</p>
+                        </div>
+                        {% endfor %}
+                    </section>
+                    {% endif %}
+
+                    <!-- Languages Section -->
+                    {% if resume and resume.languages %}
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Languages</h2>
+                        <div class="row">
+                            {% for lang in resume.languages|json_loads %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="h6">{{ lang.name }}</h4>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ lang.level }}%"
+                                                 aria-valuenow="{{ lang.level }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ lang.level }}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    <!-- Achievements Section -->
+                    {% if resume and resume.achievements %}
+                    <section class="mb-5">
+                        <h2 class="h3 border-bottom pb-2 mb-4">Achievements</h2>
+                        <ul class="list-unstyled">
+                            {% for achievement in resume.achievements|json_loads %}
+                            <li class="mb-3">
+                                <i class="fas fa-trophy text-warning me-2"></i>
+                                {{ achievement }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('resume_builder') }}" class="btn btn-primary me-2">Edit Resume</a>
+                <button onclick="window.print()" class="btn btn-outline-primary">Download PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, nav, footer {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    body {
+        font-size: 12pt;
+    }
+    .container {
+        width: 100%;
+        max-width: none;
+    }
+}
+</style>
+{% endblock %}

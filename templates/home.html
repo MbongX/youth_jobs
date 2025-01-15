@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron text-center bg-light p-5 rounded">
+    <h1 class="display-4">Welcome to Youth Jobs Portal</h1>
+    <p class="lead">Find your dream job or internship opportunity today!</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-4">
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg mx-2">Sign Up</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg mx-2">Login</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-8">
+        <h2>Latest Job Opportunities</h2>
+        <div class="row">
+            {% for job in jobs %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ job.title }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ job.company }}</h6>
+                        <p class="card-text">{{ job.description[:200] }}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('job', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">View Details</a>
+                            <small class="text-muted">{{ job.location }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Quick Links</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <a href="{{ url_for('resume_builder') }}" class="text-decoration-none">Create Your Resume</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="{{ url_for('jobs') }}" class="text-decoration-none">Browse All Jobs</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#" class="text-decoration-none">Job Search Tips</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

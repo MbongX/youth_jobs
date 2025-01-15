@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Resume Builder</h2>
+                <form method="POST" action="{{ url_for('resume_builder') }}">
+                    <div class="mb-4">
+                        <h4>Education</h4>
+                        <div id="education-container">
+                            {% if resume and resume.education %}
+                                {% for edu in resume.education|json_loads %}
+                                <div class="education-entry border p-3 mb-3 rounded">
+                                    <div class="mb-3">
+                                        <label class="form-label">Institution</label>
+                                        <input type="text" class="form-control" name="education[institution][]" value="{{ edu.institution }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Degree</label>
+                                        <input type="text" class="form-control" name="education[degree][]" value="{{ edu.degree }}">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Start Date</label>
+                                            <input type="date" class="form-control" name="education[start_date][]" value="{{ edu.start_date }}">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">End Date</label>
+                                            <input type="date" class="form-control" name="education[end_date][]" value="{{ edu.end_date }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="education-entry border p-3 mb-3 rounded">
+                                <div class="mb-3">
+                                    <label class="form-label">Institution</label>
+                                    <input type="text" class="form-control" name="education[institution][]">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Degree</label>
+                                    <input type="text" class="form-control" name="education[degree][]">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" name="education[start_date][]">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">End Date</label>
+                                        <input type="date" class="form-control" name="education[end_date][]">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addEducation()">Add Education</button>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4>Experience</h4>
+                        <div id="experience-container">
+                            {% if resume and resume.experience %}
+                                {% for exp in resume.experience|json_loads %}
+                                <div class="experience-entry border p-3 mb-3 rounded">
+                                    <div class="mb-3">
+                                        <label class="form-label">Company</label>
+                                        <input type="text" class="form-control" name="experience[company][]" value="{{ exp.company }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Position</label>
+                                        <input type="text" class="form-control" name="experience[position][]" value="{{ exp.position }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-control" name="experience[description][]" rows="3">{{ exp.description }}</textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Start Date</label>
+                                            <input type="date" class="form-control" name="experience[start_date][]" value="{{ exp.start_date }}">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">End Date</label>
+                                            <input type="date" class="form-control" name="experience[end_date][]" value="{{ exp.end_date }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="experience-entry border p-3 mb-3 rounded">
+                                <div class="mb-3">
+                                    <label class="form-label">Company</label>
+                                    <input type="text" class="form-control" name="experience[company][]">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Position</label>
+                                    <input type="text" class="form-control" name="experience[position][]">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="experience[description][]" rows="3"></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" name="experience[start_date][]">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">End Date</label>
+                                        <input type="date" class="form-control" name="experience[end_date][]">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addExperience()">Add Experience</button>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4>Skills</h4>
+                        <div class="mb-3">
+                            <label class="form-label">Skills (comma-separated)</label>
+                            <textarea class="form-control" name="skills" rows="3">{{ resume.skills if resume else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Save Resume</button>
+                        <a href="{{ url_for('preview_resume') }}" class="btn btn-outline-primary ms-2">Preview Resume</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addEducation() {
+    const container = document.getElementById('education-container');
+    const template = document.querySelector('.education-entry').cloneNode(true);
+    
+    // Clear the values
+    template.querySelectorAll('input').forEach(input => input.value = '');
+    
+    container.appendChild(template);
+}
+
+function addExperience() {
+    const container = document.getElementById('experience-container');
+    const template = document.querySelector('.experience-entry').cloneNode(true);
+    
+    // Clear the values
+    template.querySelectorAll('input, textarea').forEach(input => input.value = '');
+    
+    container.appendChild(template);
+}
+</script>
+{% endblock %}

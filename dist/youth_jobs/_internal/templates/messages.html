@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <ul class="nav nav-tabs mb-4" id="messagesTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="inbox-tab" data-bs-toggle="tab" href="#inbox" role="tab">
+                    Inbox
+                    {% set unread = received|selectattr('read', 'equalto', false)|list|length %}
+                    {% if unread > 0 %}
+                    <span class="badge bg-primary">{{ unread }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="sent-tab" data-bs-toggle="tab" href="#sent" role="tab">Sent</a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="messagesContent">
+            <div class="tab-pane fade show active" id="inbox" role="tabpanel">
+                {% if received %}
+                    {% for message in received %}
+                    <div class="card mb-3 {% if not message.read %}border-primary{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">{{ message.subject }}</h5>
+                                <small class="text-muted">{{ message.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <h6 class="card-subtitle mb-2 text-muted">From: {{ message.sender.username }}</h6>
+                            {% if message.job_id %}
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                Related to job: <a href="{{ url_for('job_details', job_id=message.job_id) }}">View Job</a>
+                            </h6>
+                            {% endif %}
+                            <p class="card-text">{{ message.body }}</p>
+                            <a href="{{ url_for('send_message', recipient_id=message.sender_id) }}" class="btn btn-outline-primary btn-sm">Reply</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">No messages in your inbox.</div>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade" id="sent" role="tabpanel">
+                {% if sent %}
+                    {% for message in sent %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">{{ message.subject }}</h5>
+                                <small class="text-muted">{{ message.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <h6 class="card-subtitle mb-2 text-muted">To: {{ message.recipient.username }}</h6>
+                            {% if message.job_id %}
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                Related to job: <a href="{{ url_for('job_details', job_id=message.job_id) }}">View Job</a>
+                            </h6>
+                            {% endif %}
+                            <p class="card-text">{{ message.body }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">No sent messages.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

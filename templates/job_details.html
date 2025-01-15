@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h1 class="card-title h2">{{ job.title }}</h1>
+                        <h2 class="h5 text-muted">{{ job.company }}</h2>
+                    </div>
+                    <span class="badge bg-primary">{{ job.job_type }}</span>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="h5">Location</h3>
+                    <p>{{ job.location }}</p>
+                </div>
+
+                {% if job.salary_range %}
+                <div class="mb-4">
+                    <h3 class="h5">Salary Range</h3>
+                    <p>{{ job.salary_range }}</p>
+                </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <h3 class="h5">Job Description</h3>
+                    <p>{{ job.description }}</p>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="h5">Requirements</h3>
+                    <p>{{ job.requirements }}</p>
+                </div>
+
+                {% if job.skills_required %}
+                <div class="mb-4">
+                    <h3 class="h5">Required Skills</h3>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for skill in job.skills_required.split(',') %}
+                        <span class="badge bg-secondary">{{ skill.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <h3 class="h5">Posted</h3>
+                    <p>{{ job.posted_date.strftime('%Y-%m-%d') }}</p>
+                </div>
+
+                <div class="d-grid gap-2">
+                    {% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
+                    <a href="{{ url_for('apply_job', job_id=job.id) }}" class="btn btn-primary">Apply Now</a>
+                    {% elif not current_user.is_authenticated %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">Login to Apply</a>
+                    {% endif %}
+
+                    {% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#messageEmployerModal">
+                        Message Employer
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_authenticated and current_user.user_type == 'applicant' %}
+<!-- Message Employer Modal -->
+<div class="modal fade" id="messageEmployerModal" tabindex="-1" aria-labelledby="messageEmployerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageEmployerModalLabel">Message Employer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('send_message', recipient_id=job.employer_id) }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="job_id" value="{{ job.id }}">
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="subject" name="subject" required 
+                               value="Regarding: {{ job.title }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="body" rows="5" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

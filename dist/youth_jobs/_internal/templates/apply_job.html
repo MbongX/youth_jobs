@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Apply for {{ job.title }}</h2>
+                <h5 class="text-muted mb-4">{{ job.company }}</h5>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="resume" class="form-label">Select Resume</label>
+                        <select class="form-select" id="resume" name="resume_id" required>
+                            <option value="">Choose a resume...</option>
+                            {% for resume in resumes %}
+                            <option value="{{ resume.id }}">Resume (Last updated: {{ resume.last_updated.strftime('%Y-%m-%d') }})</option>
+                            {% endfor %}
+                        </select>
+                        {% if not resumes %}
+                        <div class="mt-2">
+                            <a href="{{ url_for('resume_builder') }}" class="btn btn-outline-primary btn-sm">Create Resume</a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cover_letter" class="form-label">Cover Letter</label>
+                        <textarea class="form-control" id="cover_letter" name="cover_letter" rows="6" required></textarea>
+                        <div class="form-text">Explain why you're a good fit for this position.</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Submit Application</button>
+                        <a href="{{ url_for('job_details', job_id=job.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <h2 class="mb-4">Notifications</h2>
+        
+        {% if notifications %}
+            {% for notification in notifications %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">
+                                {% if notification.type == 'job_match' %}
+                                    <i class="fas fa-briefcase text-primary me-2"></i>
+                                {% elif notification.type == 'application_update' %}
+                                    <i class="fas fa-file-alt text-success me-2"></i>
+                                {% elif notification.type == 'message' %}
+                                    <i class="fas fa-envelope text-info me-2"></i>
+                                {% endif %}
+                                {{ notification.message }}
+                            </h5>
+                            <p class="card-text">
+                                <small class="text-muted">{{ notification.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </p>
+                        </div>
+                        <a href="{{ url_for('mark_notification_read', notification_id=notification.id) }}" 
+                           class="btn btn-outline-primary btn-sm">Mark as Read</a>
+                    </div>
+                    
+                    {% if notification.type == 'job_match' %}
+                        <a href="{{ url_for('job_details', job_id=notification.related_id) }}" 
+                           class="btn btn-primary btn-sm mt-2">View Job</a>
+                    {% elif notification.type == 'application_update' %}
+                        <a href="{{ url_for('job_applications') }}" 
+                           class="btn btn-primary btn-sm mt-2">View Application</a>
+                    {% elif notification.type == 'message' %}
+                        <a href="{{ url_for('messages') }}" 
+                           class="btn btn-primary btn-sm mt-2">View Message</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">No new notifications.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
