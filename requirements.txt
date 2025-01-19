@@ -4,7 +4,7 @@ Flask-Login==0.6.3
 Flask-Mail==0.9.1
 Flask-Migrate==4.1.0
 Flask-WTF==1.2.1
-Werkzeug==3.0.1
+Werkzeug==3.0.6
 SQLAlchemy==2.0.37
 alembic==1.14.0
 python-dotenv==1.0.0
