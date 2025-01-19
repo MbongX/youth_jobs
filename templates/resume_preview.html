@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h1 class="display-4">{{ resume.full_name }}</h1>
+                        <p class="text-muted">
+                            {{ resume.email }} | {{ resume.phone }}
+                            {% if resume.address %}
+                            <br>{{ resume.address }}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    {% if resume.summary %}
+                    <div class="mb-4">
+                        <h3>Professional Summary</h3>
+                        <hr>
+                        <p>{{ resume.summary }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if resume.education %}
+                    <div class="mb-4">
+                        <h3>Education</h3>
+                        <hr>
+                        {% for edu in resume.education %}
+                        <div class="mb-3">
+                            <h5>{{ edu.school }}</h5>
+                            <p class="mb-1"><strong>{{ edu.degree }}</strong> {% if edu.field %}in {{ edu.field }}{% endif %}</p>
+                            <p class="text-muted">{{ edu.start_date }} - {{ edu.end_date }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if resume.experience %}
+                    <div class="mb-4">
+                        <h3>Work Experience</h3>
+                        <hr>
+                        {% for exp in resume.experience %}
+                        <div class="mb-3">
+                            <h5>{{ exp.company }}</h5>
+                            <p class="mb-1"><strong>{{ exp.position }}</strong></p>
+                            <p class="text-muted">{{ exp.start_date }} - {{ exp.end_date }}</p>
+                            <p>{{ exp.description }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if resume.skills %}
+                    <div class="mb-4">
+                        <h3>Skills</h3>
+                        <hr>
+                        <p>{{ resume.skills|join(', ') }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('resume_builder') }}" class="btn btn-outline-primary">Edit Resume</a>
+                        <a href="{{ url_for('jobs') }}" class="btn btn-primary ms-2">Browse Jobs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

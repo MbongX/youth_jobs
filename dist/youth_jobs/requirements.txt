@@ -2,9 +2,12 @@ Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-Mail==0.9.1
+Flask-Migrate==4.1.0
 Flask-WTF==1.2.1
 Werkzeug==3.0.1
-email-validator==2.1.0.post1
+SQLAlchemy==2.0.37
+alembic==1.14.0
 python-dotenv==1.0.0
+email-validator==2.1.0.post1
 requests==2.31.0
 APScheduler==3.10.4

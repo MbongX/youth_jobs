@@ -31,7 +31,7 @@
                             <h6 class="card-subtitle mb-2 text-muted">From: {{ message.sender.username }}</h6>
                             {% if message.job_id %}
                             <h6 class="card-subtitle mb-2 text-muted">
-                                Related to job: <a href="{{ url_for('job_details', job_id=message.job_id) }}">View Job</a>
+                                Related to job: <a href="{{ url_for('job', job_id=message.job_id) }}">View Job</a>
                             </h6>
                             {% endif %}
                             <p class="card-text">{{ message.body }}</p>
@@ -56,7 +56,7 @@
                             <h6 class="card-subtitle mb-2 text-muted">To: {{ message.recipient.username }}</h6>
                             {% if message.job_id %}
                             <h6 class="card-subtitle mb-2 text-muted">
-                                Related to job: <a href="{{ url_for('job_details', job_id=message.job_id) }}">View Job</a>
+                                Related to job: <a href="{{ url_for('job', job_id=message.job_id) }}">View Job</a>
                             </h6>
                             {% endif %}
                             <p class="card-text">{{ message.body }}</p>

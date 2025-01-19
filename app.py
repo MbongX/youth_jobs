@@ -8,11 +8,14 @@ import requests
 from flask_mail import Mail, Message as MailMessage
 import json
 from datetime import datetime, timedelta
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///youth_jobs.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
@@ -41,6 +44,9 @@ class User(UserMixin, db.Model):
     received_messages = db.relationship('Message', backref='recipient', lazy=True, foreign_keys='Message.recipient_id')
     notifications = db.relationship('Notification', backref='user', lazy=True)
     preferences = db.relationship('JobPreference', backref='user', lazy=True)
+
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
 
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,10 +77,32 @@ class JobApplication(db.Model):
 class Resume(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    title = db.Column(db.String(100), nullable=False)
-    content = db.Column(db.JSON, nullable=False)
+    title = db.Column(db.String(100), nullable=False, default='My Resume')
+    full_name = db.Column(db.String(100))
+    email = db.Column(db.String(120))
+    phone = db.Column(db.String(20))
+    address = db.Column(db.Text)
+    summary = db.Column(db.Text)
+    education = db.Column(db.JSON)
+    experience = db.Column(db.JSON)
+    skills = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'full_name': self.full_name,
+            'email': self.email,
+            'phone': self.phone,
+            'address': self.address,
+            'summary': self.summary,
+            'education': self.education or [],
+            'experience': self.experience or [],
+            'skills': self.skills or [],
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
 
     # Relationships
     applications = db.relationship('JobApplication', backref='resume', lazy=True)
@@ -110,6 +138,80 @@ class JobPreference(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Mock Data Creation
+def create_mock_data():
+    # Check if mock data already exists
+    if User.query.filter_by(email="employer@test.com").first() is not None:
+        print("Mock data already exists, skipping creation...")
+        return
+
+    # Create test users
+    employer = User(
+        username="test_employer",
+        email="employer@test.com",
+        user_type="employer",
+        company_name="Test Company"
+    )
+    employer.set_password("password123")
+    
+    applicant = User(
+        username="test_applicant",
+        email="applicant@test.com",
+        user_type="applicant"
+    )
+    applicant.set_password("password123")
+    
+    db.session.add(employer)
+    db.session.add(applicant)
+    db.session.commit()
+    
+    # Create test job
+    job = Job(
+        employer_id=employer.id,
+        title="Software Developer",
+        company="Test Company",
+        description="Looking for a talented software developer",
+        requirements="Python, Flask, SQL",
+        location="Remote",
+        job_type="Full-time",
+        salary_range="$80,000 - $100,000",
+        skills_required="Python,Flask,SQL,Git"
+    )
+    db.session.add(job)
+    
+    # Create test resume
+    resume = Resume(
+        user_id=applicant.id,
+        title="My Professional Resume",
+        full_name="Test Applicant",
+        email="applicant@test.com",
+        phone="123-456-7890",
+        summary="Experienced software developer",
+        education=json.dumps([{
+            "degree": "Bachelor of Science",
+            "institution": "Test University",
+            "start_date": "2018",
+            "end_date": "2022"
+        }]),
+        experience=json.dumps([{
+            "position": "Junior Developer",
+            "company": "Previous Company",
+            "start_date": "2022",
+            "end_date": "Present",
+            "description": "Developed web applications using Python and Flask"
+        }]),
+        skills="Python,Flask,SQL,Git"
+    )
+    db.session.add(resume)
+    
+    try:
+        db.session.commit()
+        print("Mock data created successfully!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating mock data: {str(e)}")
+        raise
+
 # Routes
 @app.route('/')
 def home():
@@ -126,16 +228,134 @@ def job(job_id):
     job = Job.query.get_or_404(job_id)
     return render_template('job_details.html', job=job)
 
+@app.route('/job/<int:job_id>/apply', methods=['GET', 'POST'])
+@login_required
+def apply_job(job_id):
+    if current_user.user_type != 'applicant':
+        flash('Only applicants can apply for jobs.', 'error')
+        return redirect(url_for('jobs'))
+
+    job = Job.query.get_or_404(job_id)
+    resumes = Resume.query.filter_by(user_id=current_user.id).all()
+
+    if request.method == 'POST':
+        resume_id = request.form.get('resume_id')
+        cover_letter = request.form.get('cover_letter')
+
+        if not resume_id:
+            flash('Please select a resume.', 'error')
+            return redirect(url_for('apply_job', job_id=job_id))
+
+        application = JobApplication(
+            job_id=job_id,
+            applicant_id=current_user.id,
+            resume_id=resume_id,
+            cover_letter=cover_letter,
+            status='pending'
+        )
+
+        try:
+            db.session.add(application)
+            db.session.commit()
+            
+            # Create notification for employer
+            notification = Notification(
+                user_id=job.employer_id,
+                title='New Application Received',
+                message=f'New application received for {job.title}',
+                notification_type='new_application',
+                related_id=application.id
+            )
+            db.session.add(notification)
+            db.session.commit()
+
+            flash('Application submitted successfully!', 'success')
+            return redirect(url_for('jobs'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error submitting application. Please try again.', 'error')
+            app.logger.error(f"Application error: {str(e)}")
+            return redirect(url_for('apply_job', job_id=job_id))
+
+    return render_template('apply_job.html', job=job, resumes=resumes)
+
 @app.route('/resume-builder')
 @login_required
 def resume_builder():
     resume = Resume.query.filter_by(user_id=current_user.id).first()
     return render_template('resume_builder.html', resume=resume)
 
+@app.route('/resume/preview/<int:resume_id>')
+@login_required
+def preview_resume(resume_id):
+    resume = Resume.query.get_or_404(resume_id)
+    if resume.user_id != current_user.id:
+        flash('You do not have permission to view this resume.', 'error')
+        return redirect(url_for('resume_builder'))
+    return render_template('resume_preview.html', resume=resume)
+
+@app.route('/resume/save', methods=['POST'])
+@login_required
+def save_resume():
+    data = request.json
+    resume = Resume.query.filter_by(user_id=current_user.id).first()
+    
+    if not resume:
+        resume = Resume(user_id=current_user.id)
+        db.session.add(resume)
+    
+    # Update resume fields
+    resume.title = data.get('title', 'My Resume')
+    resume.full_name = data.get('full_name')
+    resume.email = data.get('email')
+    resume.phone = data.get('phone')
+    resume.address = data.get('address')
+    resume.summary = data.get('summary')
+    resume.education = data.get('education', [])
+    resume.experience = data.get('experience', [])
+    resume.skills = data.get('skills', [])
+    resume.last_updated = datetime.utcnow()
+    
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', 'resume_id': resume.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html')
+    if current_user.user_type == 'applicant':
+        resumes = Resume.query.filter_by(user_id=current_user.id).all()
+        applications = JobApplication.query.filter_by(applicant_id=current_user.id).all()
+        return render_template('profile.html', resumes=resumes, applications=applications)
+    else:  # employer
+        posted_jobs = Job.query.filter_by(employer_id=current_user.id).all()
+        return render_template('profile.html', posted_jobs=posted_jobs)
+
+@app.route('/profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    if request.method == 'POST':
+        current_user.email = request.form['email']
+        
+        if current_user.user_type == 'employer':
+            current_user.company_name = request.form['company_name']
+        
+        new_password = request.form.get('new_password')
+        if new_password:
+            current_user.set_password(new_password)
+        
+        try:
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating profile. Please try again.', 'error')
+            app.logger.error(f"Profile update error: {str(e)}")
+        
+        return redirect(url_for('profile'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -155,23 +375,43 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered.', 'danger')
+        user_type = request.form.get('user_type')
+        company_name = request.form.get('company_name') if user_type == 'employer' else None
+
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists!', 'error')
             return redirect(url_for('register'))
         
-        hashed_password = generate_password_hash(password)
-        new_user = User(username=username, email=email, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered!', 'error')
+            return redirect(url_for('register'))
+
+        user = User(
+            username=username,
+            email=email,
+            user_type=user_type,
+            company_name=company_name
+        )
+        user.set_password(password)
         
-        flash('Registration successful! Please login.', 'success')
-        return redirect(url_for('login'))
-    
+        try:
+            db.session.add(user)
+            db.session.commit()
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed! Please try again.', 'error')
+            app.logger.error(f"Registration error: {str(e)}")
+            return redirect(url_for('register'))
+
     return render_template('register.html')
 
 @app.route('/logout')
@@ -182,39 +422,6 @@ def logout():
     return redirect(url_for('home'))
 
 # Job Application Tracking
-@app.route('/apply/<int:job_id>', methods=['GET', 'POST'])
-@login_required
-def apply_job(job_id):
-    job = Job.query.get_or_404(job_id)
-    if request.method == 'POST':
-        resume_id = request.form.get('resume_id')
-        cover_letter = request.form.get('cover_letter')
-        
-        application = JobApplication(
-            job_id=job_id,
-            applicant_id=current_user.id,
-            resume_id=resume_id,
-            cover_letter=cover_letter
-        )
-        db.session.add(application)
-        
-        # Create notification for employer
-        notification = Notification(
-            user_id=job.employer_id,
-            title='New Application Received',
-            message=f"New application received for {job.title}",
-            notification_type='application_update',
-            related_id=application.id
-        )
-        db.session.add(notification)
-        db.session.commit()
-        
-        flash('Application submitted successfully!', 'success')
-        return redirect(url_for('job_applications'))
-    
-    resumes = Resume.query.filter_by(user_id=current_user.id).all()
-    return render_template('apply_job.html', job=job, resumes=resumes)
-
 @app.route('/applications')
 @login_required
 def job_applications():
@@ -381,11 +588,6 @@ def check_job_matches():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.drop_all()
         db.create_all()
-        
-        # Import and create mock data
-        from mock_data import create_mock_data
-        create_mock_data(app, db, User, Job, Resume, JobApplication, Message, Notification)
-
-    app.run(debug=True)
+        create_mock_data()
+        app.run(debug=True)
